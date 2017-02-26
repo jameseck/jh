@@ -22,11 +22,8 @@ import (
 )
 
 var (
-	cfgFile string
-	sslCert string
-	sslKey  string
-	sslCa   string
-	debug   bool
+	cfgFile    string
+	factfilter []string
 )
 
 // RootCmd represents the base command when called without any subcommands
@@ -50,17 +47,19 @@ func init() {
 
 	// global flags
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "$HOME/.goh.yaml", "config file.")
-	RootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "Enable debug logging.")
-	RootCmd.PersistentFlags().StringVar(&sslCert, "ssl_cert", "", "Client SSL certificate file to connect to puppetdb.")
-	RootCmd.PersistentFlags().StringVar(&sslKey, "ssl_key", "", "Client SSL key file to connect to puppetdb.")
-	RootCmd.PersistentFlags().StringVar(&sslCa, "ssl_ca", "", "SSL CA file to connect to puppetdb.")
+	RootCmd.PersistentFlags().BoolP("debug", "d", false, "Enable debug logging.")
+	RootCmd.PersistentFlags().String("puppetdb-server", "", "IP or fqdn of puppetdb server.")
+	RootCmd.PersistentFlags().String("ssl-cert", "", "Client SSL certificate file to connect to puppetdb.")
+	RootCmd.PersistentFlags().String("ssl-key", "", "Client SSL key file to connect to puppetdb.")
+	RootCmd.PersistentFlags().String("ssl-ca", "", "SSL CA file to connect to puppetdb.")
+	RootCmd.PersistentFlags().StringSliceVarP(&factfilter, "fact", "f", []string{}, "Facts to query on")
 
 	viper.SetDefault("debug", false)
 	viper.BindPFlag("debug", RootCmd.PersistentFlags().Lookup("debug"))
-	viper.BindPFlag("ssl_cert", RootCmd.PersistentFlags().Lookup("ssl_cert"))
-	viper.BindPFlag("ssl_key", RootCmd.PersistentFlags().Lookup("ssl_key"))
-	viper.BindPFlag("ssl_ca", RootCmd.PersistentFlags().Lookup("ssl_ca"))
-
+	viper.BindPFlag("puppetdb-server", RootCmd.PersistentFlags().Lookup("puppetdb-server"))
+	viper.BindPFlag("ssl-cert", RootCmd.PersistentFlags().Lookup("ssl-cert"))
+	viper.BindPFlag("ssl-key", RootCmd.PersistentFlags().Lookup("ssl-key"))
+	viper.BindPFlag("ssl-ca", RootCmd.PersistentFlags().Lookup("ssl-ca"))
 }
 
 // initConfig reads in config file and ENV variables if set.

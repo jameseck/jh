@@ -1,4 +1,4 @@
-// Copyright © 2017 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2017 James Eckersall <james.eckersall@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jameseck/goh/puppetdb"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -33,7 +34,16 @@ var queryCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO: Work your own magic here
 		fmt.Println("query called")
-		fmt.Printf("fmt: %s\n", order)
+		fmt.Printf("order: %s\n", viper.Get("query.order"))
+		fmt.Printf("puppetdb-server: %s\n", viper.Get("puppetdb-server"))
+		fmt.Printf("ssl-cert: %s\n", viper.Get("ssl-cert"))
+		fmt.Printf("ssl-key: %s\n", viper.Get("ssl-key"))
+		fmt.Printf("ssl-ca: %s\n", viper.Get("ssl-ca"))
+		p := puppetdb.New(viper.GetString("ssl-cert"), viper.GetString("ssl-key"), viper.GetString("ssl-ca"), viper.GetString("puppetdb-server"))
+		p.Get("bob")
+
+		fmt.Printf("%v", factfilter)
+		//	fmt.Println(ret)
 	},
 }
 
@@ -48,7 +58,7 @@ func init() {
 	queryCmd.PersistentFlags().StringVarP(&order, "order", "o", "fqdn", "Sort order for node list (fqdn,fact).")
 	queryCmd.PersistentFlags().BoolVarP(&includefacts, "include-facts", "i", true, "Include facts in output that were used in criteria.")
 
-	viper.BindPFlag("order", queryCmd.PersistentFlags().Lookup("order"))
+	viper.BindPFlag("query.order", queryCmd.PersistentFlags().Lookup("order"))
 	viper.BindPFlag("includefacts", queryCmd.PersistentFlags().Lookup("includefacts"))
 
 }
