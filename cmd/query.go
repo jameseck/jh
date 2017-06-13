@@ -40,7 +40,22 @@ var queryCmd = &cobra.Command{
 		fmt.Printf("ssl-key: %s\n", viper.Get("ssl-key"))
 		fmt.Printf("ssl-ca: %s\n", viper.Get("ssl-ca"))
 		p := puppetdb.New(viper.GetString("ssl-cert"), viper.GetString("ssl-key"), viper.GetString("ssl-ca"), viper.GetString("puppetdb-server"))
-		p.Get("bob")
+		f := puppetdb.FactFilters{
+			Filters: []puppetdb.FactFilter{
+				puppetdb.FactFilter{
+					Name:     "osfamily",
+					Operator: "=",
+					Value:    "RedHat",
+				},
+				puppetdb.FactFilter{
+					Name:     "kernel",
+					Operator: "=",
+					Value:    "Linux",
+				},
+			},
+		}
+
+		fmt.Printf(p.Get(".*", f))
 
 		fmt.Printf("%v", factfilter)
 		//	fmt.Println(ret)

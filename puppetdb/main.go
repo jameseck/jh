@@ -16,6 +16,16 @@ type Puppetdb struct {
 	host       string
 }
 
+type FactFilters struct {
+	Filters []FactFilter
+}
+
+type FactFilter struct {
+	Name     string
+	Value    string
+	Operator string
+}
+
 type Fact struct {
 	Value    string `json:"value"`
 	Name     string `json:"name"`
@@ -38,17 +48,64 @@ func New(certfile string, keyfile string, cafile string, host string) *Puppetdb 
 	}
 }
 
-func (puppetdb *Puppetdb) Get(query string) (response Facts) {
-	fmt.Println("vim-go")
+/*
+query: [ "and",
+  [ "or",
+    [ "~", "certname", ".*" ]
+  ],
+  [ "or",
+    [ "=", "name", "mgmt_ip" ]
+,    [ "=", "name", "osfamily" ]
+  ]
+ ,["and"
+   ,[ "in", "certname",
+      [ "extract", "certname", [ "select-facts",
+        [ "and",
+          [ "=", "name", "osfamily" ],
+          [ "=", "value", "Redhat" ]
+        ]
+      ]]
+    ]
+  ]
+]
+*/
 
-	query = `[ "and",
-                  [ "or",
-                    [ "~", "certname", ".*" ]
-                  ],
-                  [ "or",
-                    [ "=", "name", "ipaddress" ]
-                  ]
-                ]`
+func queryBuilder(HostRegex string, ff FactFilters, factAndOr string) (out string) {
+
+	out = "[ \"and\"\n"
+	out += ", [ \"or\"\n"
+	out += fmt.Sprintf(",   [ \"~\", \"certname\", \"%s\" ]\n", HostRegex)
+	out += "  ]\n"
+	out += ", [ \"or\"\n"
+
+	for i := range ff.Filters {
+		out += fmt.Sprintf(",   [ \"=\", \"name\", \"%s\" ]\n", ff.Filters[i].Name)
+	}
+	out += "  ]\n"
+
+	out += ", [ \"and\"\n"
+	for i := range ff.Filters {
+		out += ",   [ \"in\", \"certname\"\n"
+		out += ",     [ \"extract\", \"certname\", [ \"select-facts\"\n"
+		out += ",       [\"and\"\n"
+		out += fmt.Sprintf(",         [ \"=\", \"name\", \"%s\" ]\n", ff.Filters[i].Name)
+		out += fmt.Sprintf(",         [ \"%s\", \"value\", \"%s\" ]\n", ff.Filters[i].Operator, ff.Filters[i].Value)
+		out += "        ]\n"
+		out += "      ]]\n"
+		out += "    ]\n"
+	}
+	//	out += "          ]\n"
+	out += "  ]\n"
+	out += "]\n"
+
+	return out
+}
+
+func (puppetdb *Puppetdb) Get(HostRegex string, ff FactFilters) (response string) {
+	fmt.Println("Running puppetdb.Get")
+
+	query := queryBuilder(".*", ff, "and")
+	fmt.Printf(query)
 
 	// Load CA cert
 	caCert, err := ioutil.ReadFile(puppetdb.sslca)
@@ -81,6 +138,13 @@ func (puppetdb *Puppetdb) Get(query string) (response Facts) {
 	}
 	defer resp.Body.Close()
 
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	bodyString := string(bodyBytes)
+	fmt.Printf(bodyString)
+
 	decoder := json.NewDecoder(resp.Body)
 	var facts Facts
 	err = decoder.Decode(&facts)
@@ -89,5 +153,5 @@ func (puppetdb *Puppetdb) Get(query string) (response Facts) {
 		fmt.Printf("Certname: %s Name: %s Value: %s\n", f.Certname, f.Name, f.Value)
 	}
 
-	return facts
+	return ""
 }
