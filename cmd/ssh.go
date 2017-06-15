@@ -16,8 +16,8 @@ package cmd
 
 import (
 	"fmt"
-
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // sshCmd represents the ssh command
@@ -48,5 +48,6 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// sshCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	viper.BindPFlags(sshCmd.PersistentFlags())
 
 }

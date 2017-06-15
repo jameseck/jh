@@ -10,7 +10,7 @@ import (
 	"net/http"
 )
 
-type Puppetdb struct {
+type Conn struct {
 	sslkeypair tls.Certificate
 	sslca      string
 	host       string
@@ -36,39 +36,17 @@ type Facts []struct {
 	Fact
 }
 
-func New(certfile string, keyfile string, cafile string, host string) *Puppetdb {
+func New(certfile string, keyfile string, cafile string, host string) *Conn {
 	sslkeypair, err := tls.LoadX509KeyPair(certfile, keyfile)
 	if err != nil {
 		log.Fatalf("ERROR client certificate: %s", err)
 	}
-	return &Puppetdb{
+	return &Conn{
 		sslkeypair: sslkeypair,
 		sslca:      cafile,
 		host:       host,
 	}
 }
-
-/*
-query: [ "and",
-  [ "or",
-    [ "~", "certname", ".*" ]
-  ],
-  [ "or",
-    [ "=", "name", "mgmt_ip" ]
-,    [ "=", "name", "osfamily" ]
-  ]
- ,["and"
-   ,[ "in", "certname",
-      [ "extract", "certname", [ "select-facts",
-        [ "and",
-          [ "=", "name", "osfamily" ],
-          [ "=", "value", "Redhat" ]
-        ]
-      ]]
-    ]
-  ]
-]
-*/
 
 func queryBuilder(HostRegex string, ff FactFilters, factAndOr string) (out string) {
 
@@ -101,10 +79,10 @@ func queryBuilder(HostRegex string, ff FactFilters, factAndOr string) (out strin
 	return out
 }
 
-func (puppetdb *Puppetdb) Get(HostRegex string, ff FactFilters) (response string) {
+func (puppetdb *Conn) Get(HostRegex string, ff FactFilters, factAndOr string) (response string) {
 	fmt.Println("Running puppetdb.Get")
 
-	query := queryBuilder(".*", ff, "and")
+	query := queryBuilder(HostRegex, ff, factAndOr)
 	fmt.Printf(query)
 
 	// Load CA cert

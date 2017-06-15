@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jameseck/jh/puppetdb"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"os"
@@ -24,17 +25,32 @@ import (
 var (
 	cfgFile    string
 	factfilter []string
+	conn       *puppetdb.Conn
+	ConfJE     Config
 )
+
+type Server struct {
+	Fqdn string `mapstructure:"fqdn"`
+	Cert string `mapstructure:"cert"`
+	Key  string `mapstructure:"key"`
+	Ca   string `mapstructure:"ca"`
+}
+
+type Config struct {
+	QueryOrder string   `mapstructure:"query_order"`
+	MgmtIpFact string   `mapstructure:"mgmt_ip"`
+	Servers    []Server `mapstructure:"servers"`
+}
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "goh",
+	Use:   "jh",
 	Short: "Query and execute commands against hosts matched from puppetdb",
 	Long:  "Query and execute commands against hosts matched from puppetdb",
 }
 
 // Execute adds all child commands to the root command sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCm.d.
+// This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
 		fmt.Println(err)
@@ -46,20 +62,22 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	// global flags
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "$HOME/.goh.yaml", "config file.")
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "$HOME/.jh.yaml", "config file.")
 	RootCmd.PersistentFlags().BoolP("debug", "d", false, "Enable debug logging.")
-	RootCmd.PersistentFlags().String("puppetdb-server", "", "IP or fqdn of puppetdb server.")
-	RootCmd.PersistentFlags().String("ssl-cert", "", "Client SSL certificate file to connect to puppetdb.")
-	RootCmd.PersistentFlags().String("ssl-key", "", "Client SSL key file to connect to puppetdb.")
-	RootCmd.PersistentFlags().String("ssl-ca", "", "SSL CA file to connect to puppetdb.")
+	//RootCmd.PersistentFlags().String("puppetdb-server", "", "IP or fqdn of puppetdb server.")
+	//RootCmd.PersistentFlags().String("ssl-cert", "", "Client SSL certificate file to connect to puppetdb.")
+	//RootCmd.PersistentFlags().String("ssl-key", "", "Client SSL key file to connect to puppetdb.")
+	//RootCmd.PersistentFlags().String("ssl-ca", "", "SSL CA file to connect to puppetdb.")
 	RootCmd.PersistentFlags().StringSliceVarP(&factfilter, "fact", "f", []string{}, "Facts to query on")
 
-	viper.SetDefault("debug", false)
-	viper.BindPFlag("debug", RootCmd.PersistentFlags().Lookup("debug"))
-	viper.BindPFlag("puppetdb-server", RootCmd.PersistentFlags().Lookup("puppetdb-server"))
-	viper.BindPFlag("ssl-cert", RootCmd.PersistentFlags().Lookup("ssl-cert"))
-	viper.BindPFlag("ssl-key", RootCmd.PersistentFlags().Lookup("ssl-key"))
-	viper.BindPFlag("ssl-ca", RootCmd.PersistentFlags().Lookup("ssl-ca"))
+	//viper.SetDefault("debug", false)
+	//	viper.BindPFlag("debug", RootCmd.PersistentFlags().Lookup("debug"))
+	viper.BindPFlags(RootCmd.PersistentFlags())
+	//viper.BindPFlag("puppetdb-server", RootCmd.PersistentFlags().Lookup("puppetdb-server"))
+	//viper.BindPFlag("ssl-cert", RootCmd.PersistentFlags().Lookup("ssl-cert"))
+	//viper.BindPFlag("ssl-key", RootCmd.PersistentFlags().Lookup("ssl-key"))
+	//viper.BindPFlag("ssl-ca", RootCmd.PersistentFlags().Lookup("ssl-ca"))
+
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -68,7 +86,7 @@ func initConfig() {
 		viper.SetConfigFile(cfgFile)
 	}
 
-	viper.SetConfigName(".goh")  // name of config file (without extension)
+	viper.SetConfigName(".jh")   // name of config file (without extension)
 	viper.AddConfigPath("$HOME") // adding home directory as first search path
 	viper.AutomaticEnv()         // read in environment variables that match
 
@@ -76,4 +94,5 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
+	//conn = puppetdb.New(viper.GetString("ssl-cert"), viper.GetString("ssl-key"), viper.GetString("ssl-ca"), viper.GetString("puppetdb-server"))
 }

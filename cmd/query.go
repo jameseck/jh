@@ -16,7 +16,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jameseck/goh/puppetdb"
+	//	"github.com/jameseck/jh/puppetdb"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -32,15 +32,25 @@ var queryCmd = &cobra.Command{
 	Short: "Query for nodes from puppetdb",
 	Long:  "Query for nodes from puppetdb",
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: Work your own magic here
 		fmt.Println("query called")
-		fmt.Printf("order: %s\n", viper.Get("query.order"))
-		fmt.Printf("puppetdb-server: %s\n", viper.Get("puppetdb-server"))
-		fmt.Printf("ssl-cert: %s\n", viper.Get("ssl-cert"))
-		fmt.Printf("ssl-key: %s\n", viper.Get("ssl-key"))
-		fmt.Printf("ssl-ca: %s\n", viper.Get("ssl-ca"))
-		p := puppetdb.New(viper.GetString("ssl-cert"), viper.GetString("ssl-key"), viper.GetString("ssl-ca"), viper.GetString("puppetdb-server"))
-		f := puppetdb.FactFilters{
+		//fmt.Printf("order: %s\n", viper.Get("query.order"))
+		//fmt.Printf("puppetdb-server: %s\n", viper.Get("puppetdb-server"))
+		//fmt.Printf("ssl-cert: %s\n", viper.Get("ssl-cert"))
+		//fmt.Printf("ssl-key: %s\n", viper.Get("ssl-key"))
+		//fmt.Printf("ssl-ca: %s\n", viper.Get("ssl-ca"))
+
+		fmt.Printf("all: %#v\n", viper.AllSettings())
+
+		fmt.Printf("cfg\n")
+		fmt.Printf("%#v\n", ConfJE)
+		err := viper.Unmarshal(&ConfJE)
+		if err != nil {
+			fmt.Printf("unable to decode into struct, %v\n", err)
+		}
+		fmt.Printf("cfg\n")
+		fmt.Printf("%#v\n", ConfJE)
+
+		/*f := puppetdb.FactFilters{
 			Filters: []puppetdb.FactFilter{
 				puppetdb.FactFilter{
 					Name:     "osfamily",
@@ -53,12 +63,11 @@ var queryCmd = &cobra.Command{
 					Value:    "Linux",
 				},
 			},
-		}
+		}*/
 
-		fmt.Printf(p.Get(".*", f))
+		//fmt.Printf(conn.Get(args[0], f, "and"))
 
-		fmt.Printf("%v", factfilter)
-		//	fmt.Println(ret)
+		fmt.Printf("factfilter: %v\n", factfilter)
 	},
 }
 
@@ -73,7 +82,6 @@ func init() {
 	queryCmd.PersistentFlags().StringVarP(&order, "order", "o", "fqdn", "Sort order for node list (fqdn,fact).")
 	queryCmd.PersistentFlags().BoolVarP(&includefacts, "include-facts", "i", true, "Include facts in output that were used in criteria.")
 
-	viper.BindPFlag("query.order", queryCmd.PersistentFlags().Lookup("order"))
-	viper.BindPFlag("includefacts", queryCmd.PersistentFlags().Lookup("includefacts"))
+	viper.BindPFlags(queryCmd.PersistentFlags())
 
 }
