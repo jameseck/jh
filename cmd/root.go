@@ -26,7 +26,7 @@ var (
 	cfgFile    string
 	factfilter []string
 	conn       *puppetdb.Conn
-	ConfJE     Config
+	Conf       Config
 )
 
 type Server struct {
@@ -94,5 +94,4 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
-	//conn = puppetdb.New(viper.GetString("ssl-cert"), viper.GetString("ssl-key"), viper.GetString("ssl-ca"), viper.GetString("puppetdb-server"))
 }

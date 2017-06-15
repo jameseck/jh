@@ -16,7 +16,7 @@ package cmd
 
 import (
 	"fmt"
-	//	"github.com/jameseck/jh/puppetdb"
+	"github.com/jameseck/jh/puppetdb"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -42,15 +42,15 @@ var queryCmd = &cobra.Command{
 		fmt.Printf("all: %#v\n", viper.AllSettings())
 
 		fmt.Printf("cfg\n")
-		fmt.Printf("%#v\n", ConfJE)
-		err := viper.Unmarshal(&ConfJE)
+		fmt.Printf("%#v\n", Conf)
+		err := viper.Unmarshal(&Conf)
 		if err != nil {
 			fmt.Printf("unable to decode into struct, %v\n", err)
 		}
 		fmt.Printf("cfg\n")
-		fmt.Printf("%#v\n", ConfJE)
+		fmt.Printf("%#v\n", Conf)
 
-		/*f := puppetdb.FactFilters{
+		f := puppetdb.FactFilters{
 			Filters: []puppetdb.FactFilter{
 				puppetdb.FactFilter{
 					Name:     "osfamily",
@@ -63,11 +63,15 @@ var queryCmd = &cobra.Command{
 					Value:    "Linux",
 				},
 			},
-		}*/
+		}
 
-		//fmt.Printf(conn.Get(args[0], f, "and"))
+		for i := range Conf.Servers {
+			s := Conf.Servers[i]
 
-		fmt.Printf("factfilter: %v\n", factfilter)
+			conn = puppetdb.New(s.Cert, s.Key, s.Ca, s.Fqdn)
+			fmt.Printf(conn.Get(args[0], f, "and"))
+		}
+
 	},
 }
 

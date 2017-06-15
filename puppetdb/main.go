@@ -127,9 +127,11 @@ func (puppetdb *Conn) Get(HostRegex string, ff FactFilters, factAndOr string) (r
 	var facts Facts
 	err = decoder.Decode(&facts)
 
+	var out string
+
 	for _, f := range facts {
-		fmt.Printf("Certname: %s Name: %s Value: %s\n", f.Certname, f.Name, f.Value)
+		out += fmt.Sprintf("Certname: %s Name: %s Value: %s\n", f.Certname, f.Name, f.Value)
 	}
 
-	return ""
+	return out
 }
