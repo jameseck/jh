@@ -1,6 +1,7 @@
 package puppetdb
 
 import (
+	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -8,6 +9,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os/user"
+	"path/filepath"
+	"text/template"
 )
 
 type Conn struct {
@@ -36,14 +40,41 @@ type Facts []struct {
 	Fact
 }
 
+func expand(path string) (string, error) {
+	if len(path) == 0 || path[0] != '~' {
+		return path, nil
+	}
+
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(usr.HomeDir, path[1:]), nil
+}
+
 func New(certfile string, keyfile string, cafile string, host string) *Conn {
-	sslkeypair, err := tls.LoadX509KeyPair(certfile, keyfile)
+
+	certFile, err := expand(certfile)
+	if err != nil {
+		log.Fatalf("ERROR unable to expand path: %s. %s", certfile, err)
+	}
+	keyFile, err := expand(keyfile)
+	if err != nil {
+		log.Fatalf("ERROR unable to expand path: %s. %s", keyfile, err)
+	}
+	caFile, err := expand(cafile)
+	if err != nil {
+		log.Fatalf("ERROR unable to expand path: %s. %s", cafile, err)
+	}
+
+	sslKeyPair, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
 		log.Fatalf("ERROR client certificate: %s", err)
 	}
+
 	return &Conn{
-		sslkeypair: sslkeypair,
-		sslca:      cafile,
+		sslkeypair: sslKeyPair,
+		sslca:      caFile,
 		host:       host,
 	}
 }
@@ -65,14 +96,13 @@ func queryBuilder(HostRegex string, ff FactFilters, factAndOr string) (out strin
 	for i := range ff.Filters {
 		out += ",   [ \"in\", \"certname\"\n"
 		out += ",     [ \"extract\", \"certname\", [ \"select-facts\"\n"
-		out += ",       [\"and\"\n"
+		out += ",       [ \"and\"\n"
 		out += fmt.Sprintf(",         [ \"=\", \"name\", \"%s\" ]\n", ff.Filters[i].Name)
 		out += fmt.Sprintf(",         [ \"%s\", \"value\", \"%s\" ]\n", ff.Filters[i].Operator, ff.Filters[i].Value)
 		out += "        ]\n"
 		out += "      ]]\n"
 		out += "    ]\n"
 	}
-	//	out += "          ]\n"
 	out += "  ]\n"
 	out += "]\n"
 
@@ -82,7 +112,24 @@ func queryBuilder(HostRegex string, ff FactFilters, factAndOr string) (out strin
 func (puppetdb *Conn) Get(HostRegex string, ff FactFilters, factAndOr string) (response string) {
 	fmt.Println("Running puppetdb.Get")
 
-	query := queryBuilder(HostRegex, ff, factAndOr)
+	//t, err := template.ParseFiles("puppetdb/v2query.tmpl")
+	t, err := template.New("query").Parse(V2Query)
+
+	data := struct {
+		Host string
+		Ff   FactFilters
+	}{
+		HostRegex,
+		ff,
+	}
+
+	var tpl bytes.Buffer
+	if err := t.Execute(&tpl, data); err != nil {
+		log.Fatalf("TMPL ERROR: %S", err)
+	}
+	query := tpl.String()
+
+	//query := queryBuilder(HostRegex, ff, factAndOr)
 	fmt.Printf(query)
 
 	// Load CA cert

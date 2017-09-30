@@ -24,6 +24,7 @@ import (
 var (
 	order        string
 	includefacts bool
+	hostRegex    string
 )
 
 // queryCmd represents the query command
@@ -65,11 +66,17 @@ var queryCmd = &cobra.Command{
 			},
 		}
 
+		if len(args) == 0 {
+			hostRegex = ".*"
+		} else {
+			hostRegex = args[0]
+		}
+
 		for i := range Conf.Servers {
 			s := Conf.Servers[i]
 
 			conn = puppetdb.New(s.Cert, s.Key, s.Ca, s.Fqdn)
-			fmt.Printf(conn.Get(args[0], f, "and"))
+			fmt.Printf(conn.Get(hostRegex, f, "and"))
 		}
 
 	},
