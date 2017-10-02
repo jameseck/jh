@@ -50,21 +50,24 @@ var queryCmd = &cobra.Command{
 		}
 		fmt.Printf("cfg\n")
 		fmt.Printf("%#v\n", Conf)
+		f := viper.GetStringSlice("fact")
+		fmt.Printf("factfilters from viper: %q\n", f)
 
-		f := puppetdb.FactFilters{
-			Filters: []puppetdb.FactFilter{
-				puppetdb.FactFilter{
-					Name:     "osfamily",
-					Operator: "=",
-					Value:    "RedHat",
-				},
-				puppetdb.FactFilter{
-					Name:     "kernel",
-					Operator: "=",
-					Value:    "Linux",
-				},
-			},
-		}
+		/*		f := puppetdb.FactFilters{
+					Filters: []puppetdb.FactFilter{
+						puppetdb.FactFilter{
+							Name:     "osfamily",
+							Operator: "=",
+							Value:    "RedHat",
+						},
+						puppetdb.FactFilter{
+							Name:     "kernel",
+							Operator: "=",
+							Value:    "Linux",
+						},
+					},
+				}
+		*/
 
 		if len(args) == 0 {
 			hostRegex = ".*"

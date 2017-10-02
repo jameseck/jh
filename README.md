@@ -2,9 +2,17 @@
 
 ssh - ssh to a node, or pick a node from a list to ssh to
 query - just get a list of nodes back
+ - fact matching to pick hosts
+ - dump of all facts for all matching hosts
+
 run - run a simple shell command on every matching node (via ansible)
 ansible - use any arbitrary ansible module against every matching node
 listfacts - list all known facts in puppetdb/other backends
+
+output templates:
+ - standard output will be a table
+ - json
+ - yaml
 
 
 global args:

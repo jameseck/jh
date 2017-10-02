@@ -5,12 +5,14 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"text/template"
 )
 
@@ -36,8 +38,41 @@ type Fact struct {
 	Certname string `json:"certname"`
 }
 
+// Holds output from puppetdb facts endpoint
 type Facts []struct {
 	Fact
+}
+
+const factmatch = `^(?P<name>.*?)(?P<op><=|>=|=|~|<|>| )(?P<val>.*?)$`
+
+// Parse a string into a FactFilter object
+// name=val, name>val, name<val, name>=val, name<=val, name~regex, name null, name notnull
+func factParser(str string) (FactFilter, error) {
+
+	re := regexp.MustCompile(factmatch)
+
+	f := FactFilter{}
+
+	match := re.FindStringSubmatch(str)
+	if len(match) == 0 {
+		return f, errors.New("Unable to parse fact match")
+	}
+
+	if match[2] == " " {
+		f.Name = match[1]
+		f.Operator = "null"
+		if match[3] == "null" {
+			f.Value = "true"
+		} else {
+			f.Value = "false"
+		}
+	} else {
+		f.Name = match[1]
+		f.Operator = match[2]
+		f.Value = match[3]
+	}
+
+	return f, nil
 }
 
 func expand(path string) (string, error) {
@@ -109,18 +144,43 @@ func queryBuilder(HostRegex string, ff FactFilters, factAndOr string) (out strin
 	return out
 }
 
-func (puppetdb *Conn) Get(HostRegex string, ff FactFilters, factAndOr string) (response string) {
+//func (puppetdb *Conn) Get(HostRegex string, ff FactFilters, factAndOr string) (response string) {
+func (puppetdb *Conn) Get(HostRegex string, factquery []string, factAndOr string) (response string) {
 	fmt.Println("Running puppetdb.Get")
 
-	//t, err := template.ParseFiles("puppetdb/v2query.tmpl")
 	t, err := template.New("query").Parse(V2Query)
 
+	fmt.Printf("factquery: %q\n", factquery)
+
+	var s []FactFilter
+	for i := range factquery {
+		f, err := factParser(factquery[i])
+		if err != nil {
+			log.Fatalf("Error parsing fact query: %q", err)
+		} else {
+			fmt.Printf("Appending %q to s\n", f)
+			s = append(s, f)
+		}
+	}
+
+	var haveFilters bool
+
+	if len(s) > 0 {
+		haveFilters = true
+	} else {
+		haveFilters = false
+	}
+
+	fmt.Printf("haveFilters: %q\n", haveFilters)
+
 	data := struct {
-		Host string
-		Ff   FactFilters
+		Host        string
+		Ff          FactFilters
+		HaveFilters bool
 	}{
 		HostRegex,
-		ff,
+		FactFilters{Filters: s},
+		haveFilters,
 	}
 
 	var tpl bytes.Buffer

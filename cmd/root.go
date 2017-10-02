@@ -68,15 +68,16 @@ func init() {
 	//RootCmd.PersistentFlags().String("ssl-cert", "", "Client SSL certificate file to connect to puppetdb.")
 	//RootCmd.PersistentFlags().String("ssl-key", "", "Client SSL key file to connect to puppetdb.")
 	//RootCmd.PersistentFlags().String("ssl-ca", "", "SSL CA file to connect to puppetdb.")
-	RootCmd.PersistentFlags().StringSliceVarP(&factfilter, "fact", "f", []string{}, "Facts to query on")
+	RootCmd.PersistentFlags().StringSliceVarP(&factfilter, "fact", "f", []string{}, "Fact filters to query on.")
+	RootCmd.PersistentFlags().BoolP("and", "", true, "Use the AND operator for all fact filters.  Set to false to use OR operator.")
 
 	//viper.SetDefault("debug", false)
 	//	viper.BindPFlag("debug", RootCmd.PersistentFlags().Lookup("debug"))
-	viper.BindPFlags(RootCmd.PersistentFlags())
 	//viper.BindPFlag("puppetdb-server", RootCmd.PersistentFlags().Lookup("puppetdb-server"))
 	//viper.BindPFlag("ssl-cert", RootCmd.PersistentFlags().Lookup("ssl-cert"))
 	//viper.BindPFlag("ssl-key", RootCmd.PersistentFlags().Lookup("ssl-key"))
 	//viper.BindPFlag("ssl-ca", RootCmd.PersistentFlags().Lookup("ssl-ca"))
+	viper.BindPFlags(RootCmd.PersistentFlags())
 
 }
 

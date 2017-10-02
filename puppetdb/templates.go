@@ -5,6 +5,7 @@ const V2Query = `
 , [ "or"
 ,   [ "~", "certname", "{{ .Host }}" ]
   ]
+{{ if .HaveFilters }}
 , [ "or"
 
 {{- range .Ff.Filters }}
@@ -24,5 +25,6 @@ const V2Query = `
     ]
 {{- end }}
   ]
+{{ end }}
 ]
 `
